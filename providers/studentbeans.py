@@ -24,9 +24,9 @@ class StudentBeansProvider(BaseProvider):
 
     async def fetch_codes(self, email: str, password: str) -> str:
         # NOTE: Student Beans frequently changes its DOM and runs bot detection
-        # (CAPTCHA, rate limiting, device fingerprinting). The selectors below
-        # are placeholders and must be reverse-engineered against the live site
-        # before this works reliably.
+        # (CAPTCHA, rate limiting, device fingerprinting). Code-extraction
+        # selectors below are placeholders and must be reverse-engineered
+        # against the live site before codes will actually be returned.
         async with async_playwright() as p:
             proxy = self._proxy_config()
             launch_kwargs = {"headless": self.headless}
@@ -46,24 +46,27 @@ class StudentBeansProvider(BaseProvider):
             try:
                 await page.goto(self.login_url, wait_until="networkidle", timeout=30000)
 
-                # TODO: replace these selectors with the real Student Beans ones
-                await page.fill('input[name="email"]', email, timeout=10000)
-                await page.fill('input[name="password"]', password, timeout=10000)
-                await page.click('button[type="submit"]', timeout=10000)
+                # Confirmed selectors for accounts.studentbeans.com
+                await page.wait_for_selector('#email', timeout=10000)
+                await page.fill('#email', email, timeout=10000)
+                await page.fill('#password', password, timeout=10000)
+                await page.click('form button[type="submit"]', timeout=10000)
                 await page.wait_for_timeout(4000)
 
-                # Navigate to the offers/codes page and extract visible codes
+                # TODO: replace these with real Student Beans code selectors
+                # from your dashboard/offers page (e.g. .discount-code, [data-code])
                 codes = await page.evaluate(
                     """() => {
-                    // TODO: replace with real Student Beans code-element selectors
                     const els = document.querySelectorAll('.discount-code, [data-code]');
                     return Array.from(els).map(e => e.innerText || e.getAttribute('data-code')).filter(Boolean);
                     }"""
                 )
 
                 if not codes:
-                    return "No codes found. Selectors need to be updated for the current Student Beans site."
+                    return "No codes found. Code selectors need to be updated for the current Student Beans site."
                 return "\n".join(f"- {c}" for c in codes)
+            except PlaywrightTimeout:
+                return "❌ Timeout — Student Beans page took too long to load (possibly rate-limited or blocked)."
             except Exception as e:
                 return f"Error fetching Student Beans codes: {e}"
             finally:
