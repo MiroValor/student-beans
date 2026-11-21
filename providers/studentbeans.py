@@ -7,7 +7,8 @@ from .base import BaseProvider
 
 class StudentBeansProvider(BaseProvider):
     def __init__(self, headless: bool = True):
-        super().__init__("studentbeans", "https://accounts.studentbeans.com/us/authorisation/sign-in")
+        region = os.getenv("STUDENTBEANS_REGION", "uk")
+        super().__init__("studentbeans", f"https://accounts.studentbeans.com/{region}/authorisation/sign-in")
         self.headless = headless
 
     def _proxy_config(self):
