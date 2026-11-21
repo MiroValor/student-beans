@@ -2,7 +2,7 @@ import os
 import random
 import asyncio
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
-from playwright_stealth import stealth_async
+from playwright_stealth import stealth
 from .base import BaseProvider
 
 
@@ -68,7 +68,7 @@ class StudentBeansProvider(BaseProvider):
                 },
             )
             page = await context.new_page()
-            await stealth_async(page)
+            await stealth(page)
 
             # Random delay before navigating
             await asyncio.sleep(random.uniform(2, 4))
