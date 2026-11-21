@@ -2,6 +2,7 @@ import os
 import random
 import asyncio
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
+from playwright_stealth import stealth_async
 from .base import BaseProvider
 
 
@@ -24,36 +25,6 @@ class StudentBeansProvider(BaseProvider):
             proxy["password"] = pwd
         return proxy
 
-    async def _apply_stealth(self, page):
-        """Hide automation fingerprints so Student Beans doesn't detect Playwright."""
-        await page.evaluateOnNewDocument("""() => {
-            // Hide webdriver
-            Object.defineProperty(navigator, 'webdriver', { get: () => undefined, configurable: true });
-
-            // Mock plugins
-            Object.defineProperty(navigator, 'plugins', {
-                get: () => [1, 2, 3, 4, 5],
-                configurable: true
-            });
-
-            // Mock languages
-            Object.defineProperty(navigator, 'languages', {
-                get: () => ['en-US', 'en'],
-                configurable: true
-            });
-
-            // Mock chrome
-            window.chrome = { runtime: {} };
-
-            // Override permissions
-            const originalQuery = window.navigator.permissions.query;
-            window.navigator.permissions.query = (parameters) => (
-                parameters.name === 'notifications'
-                    ? Promise.resolve({ state: Notification.permission })
-                    : originalQuery(parameters)
-            );
-        }""")
-
     async def fetch_codes(self, email: str, password: str) -> str:
         async with async_playwright() as p:
             proxy = self._proxy_config()
@@ -67,6 +38,8 @@ class StudentBeansProvider(BaseProvider):
                     "--disable-accelerated-2d-canvas",
                     "--disable-gpu",
                     "--window-size=1280,800",
+                    "--disable-web-security",
+                    "--disable-features=IsolateOrigins,site-per-process",
                 ],
             }
             if proxy:
@@ -95,19 +68,19 @@ class StudentBeansProvider(BaseProvider):
                 },
             )
             page = await context.new_page()
-            await self._apply_stealth(page)
+            await stealth_async(page)
 
             # Random delay before navigating
-            await asyncio.sleep(random.uniform(1, 3))
+            await asyncio.sleep(random.uniform(2, 4))
 
             try:
                 await page.goto(self.login_url, wait_until="networkidle", timeout=60000)
 
                 await page.wait_for_selector('#email', timeout=20000)
                 await page.fill('#email', email)
-                await asyncio.sleep(random.uniform(0.5, 1.5))
+                await asyncio.sleep(random.uniform(1, 2))
                 await page.fill('#password', password)
-                await asyncio.sleep(random.uniform(0.5, 1.5))
+                await asyncio.sleep(random.uniform(1, 2))
                 await page.click('form button[type="submit"]', timeout=20000)
                 await page.wait_for_timeout(8000)
 
@@ -119,8 +92,9 @@ class StudentBeansProvider(BaseProvider):
                     )
                 if "invalid" in body_text.lower() or "incorrect" in body_text.lower():
                     return "❌ Login failed — check your email and password."
+                if "500" in body_text or "internal server error" in body_text.lower():
+                    return "❌ Student Beans returned a 500 error — their server is blocking this request (bot detection)."
 
-                # Wait a bit for page to fully load after redirect
                 await page.wait_for_timeout(5000)
 
                 codes = await page.evaluate(
