@@ -2,7 +2,6 @@ import os
 import random
 import asyncio
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
-from playwright_stealth import stealth
 from .base import BaseProvider
 
 
@@ -68,7 +67,6 @@ class StudentBeansProvider(BaseProvider):
                 },
             )
             page = await context.new_page()
-            await stealth(page)
 
             # Random delay before navigating
             await asyncio.sleep(random.uniform(2, 4))
@@ -88,7 +86,7 @@ class StudentBeansProvider(BaseProvider):
                 if "captcha" in body_text.lower() or "verify" in body_text.lower():
                     return (
                         "⚠️ Student Beans showed a CAPTCHA or verification step. "
-                        "Even with stealth + proxy, automated login may be blocked."
+                        "Automated login may be blocked."
                     )
                 if "invalid" in body_text.lower() or "incorrect" in body_text.lower():
                     return "❌ Login failed — check your email and password."
