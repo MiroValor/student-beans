@@ -24,7 +24,6 @@ RUN apt-get update && apt-get install -y \
     fonts-liberation \
     libappindicator3-1 \
     libxss1 \
-    libgdk-pixbuf2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
