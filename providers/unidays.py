@@ -12,7 +12,7 @@ class UniDaysProvider(BaseProvider):
         # are placeholders and must be reverse-engineered against the live site
         # before this works reliably. See README.md for details.
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
+            browser = await self.launch_browser(p)
             context = await browser.new_context()
             page = await context.new_page()
             try:

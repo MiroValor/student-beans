@@ -1,7 +1,0 @@
-__pycache__
-*.pyc
-.venv
-credentials.json
-.env
-.env.local
-*.log

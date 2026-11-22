@@ -1,9 +1,8 @@
 import json
 import os
 from cryptography.fernet import Fernet
-from config import ENCRYPTION_KEY
+from config import ENCRYPTION_KEY, STORAGE_FILE
 
-STORAGE_FILE = "credentials.json"
 
 
 class CredentialStore:

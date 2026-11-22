@@ -20,34 +20,33 @@ running.
    - Enable the **Message Content Intent** in the bot settings.
    - Invite the bot to your server with the `bot` scope.
 
-2. Clone/download this folder, then install dependencies:
+2. Run the one-time setup (macOS, uses the built-in `python3`):
 
 ```bash
-cd unidays-discord-bot
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-playwright install chromium
+cd ~/Documents/student-beans
+./setup.sh
 ```
 
-3. Generate an encryption key:
+   This creates `.venv`, installs dependencies and Playwright's Chromium, and
+   creates `.env` with a freshly generated `ENCRYPTION_KEY`.
+
+3. Open `.env` and paste in your `DISCORD_TOKEN`.
+
+4. Start the bot (Ctrl+C to stop):
 
 ```bash
-python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+./run.sh
 ```
 
-4. Copy `.env.example` to `.env` and fill in:
+The bot only runs while your Mac is awake and the terminal is open.
 
-```
-DISCORD_TOKEN=your_discord_bot_token_here
-ENCRYPTION_KEY=the_key_from_above
-```
+### Browser options (`.env`)
 
-5. Run the bot:
-
-```bash
-python3 bot.py
-```
+| Variable | Default | Effect |
+|----------|---------|--------|
+| `BROWSER_CHANNEL` | `chrome` | Uses your installed Google Chrome (less likely to trip bot detection). Falls back to bundled Chromium if Chrome isn't installed. Set empty to always use Chromium. |
+| `HEADLESS` | `true` | Set `false` to always show the browser window. `!codes headed` does this for a single run. |
+| `PROXY_HOST` / `PROXY_PORT` / `PROXY_USER` / `PROXY_PASS` | unset | Optional HTTP proxy. |
 
 ## Commands (DM only)
 

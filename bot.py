@@ -72,15 +72,16 @@ async def get_codes(ctx, headed: str = None):
     )
     for service, (email, password) in creds.items():
         provider = get_provider(service)
-        # Recreate provider with the right headless setting so we can toggle per-run
-        from providers import get_provider as _gp
-
-        provider = _gp(service)
-        provider.headless = not use_headed
+        # Providers are shared instances, so restore the default after this run.
+        default_headless = provider.headless
+        if use_headed:
+            provider.headless = False
         try:
             codes = await provider.fetch_codes(email, password)
         except Exception as e:
             codes = f"❌ Error: {e}"
+        finally:
+            provider.headless = default_headless
         await ctx.author.send(f"**{provider.name.title()} codes:**\n{codes}")
 
 
