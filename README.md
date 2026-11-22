@@ -48,6 +48,13 @@ The bot only runs while your Mac is awake and the terminal is open.
 | `HEADLESS` | `true` | Set `false` to always show the browser window. `!codes headed` does this for a single run. |
 | `PROXY_HOST` / `PROXY_PORT` / `PROXY_USER` / `PROXY_PASS` | unset | Optional HTTP proxy. |
 
+## Running on a Linux server (Debian/Ubuntu)
+
+`start-linux.sh` installs Python, the dependencies and Chromium, creates `.env`
+with a permanent `ENCRYPTION_KEY` on first run, then starts the bot. It is safe
+to run on every boot. Set `DISCORD_TOKEN` in the environment before running it.
+The browser always runs headless on a server, so `!codes headed` has no effect there.
+
 ## Commands (DM only)
 
 | Command | What it does |

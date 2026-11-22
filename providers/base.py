@@ -1,4 +1,5 @@
 import os
+import sys
 from abc import ABC, abstractmethod
 
 
@@ -39,7 +40,12 @@ class BaseProvider(ABC):
         it falls back to the bundled Chromium (`playwright install chromium`).
         Set BROWSER_CHANNEL= (empty) to always use the bundled Chromium.
         """
-        kwargs = {"headless": self.headless}
+        headless = self.headless
+        if not headless and sys.platform.startswith("linux") and not os.getenv("DISPLAY"):
+            # A server has no screen to show a window on.
+            print(f"[{self.name}] No display available; running headless.")
+            headless = True
+        kwargs = {"headless": headless}
         proxy = self._proxy_config()
         if proxy:
             kwargs["proxy"] = proxy
