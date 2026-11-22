@@ -1,3 +1,4 @@
+import asyncio
 import os
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeout
 from .base import BaseProvider
@@ -5,7 +6,7 @@ from .base import BaseProvider
 
 class StudentBeansProvider(BaseProvider):
     def __init__(self, headless: bool = True):
-        super().__init__("studentbeans", "https://accounts.studentbeans.com/us/authorisation/sign-in")
+        super().__init__("studentbeans", "https://www.studentbeans.com/en-us/us/accounts/authorisation/log-in")
         self.headless = headless
 
     def _proxy_config(self):
@@ -34,17 +35,32 @@ class StudentBeansProvider(BaseProvider):
                 launch_kwargs["proxy"] = proxy
 
             browser = await p.chromium.launch(**launch_kwargs)
+            # Use Playwright's real user agent: a spoofed one that doesn't match
+            # the actual browser version is an easy bot-detection signal.
             context = await browser.new_context(
                 viewport={"width": 1280, "height": 800},
-                user_agent=(
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/120.0.0.0 Safari/537.36"
-                ),
+                locale="en-US",
             )
             page = await context.new_page()
             try:
-                await page.goto(self.login_url, wait_until="networkidle", timeout=30000)
+                # Retry a few times if the server returns a 5xx error page
+                status = None
+                for attempt in range(3):
+                    response = await page.goto(
+                        self.login_url, wait_until="domcontentloaded", timeout=30000
+                    )
+                    status = response.status if response else None
+                    if status is None or status < 500:
+                        break
+                    await asyncio.sleep(5 * (attempt + 1))
+
+                if status is not None and status >= 400:
+                    return (
+                        f"❌ Student Beans returned HTTP {status} on the login page. "
+                        "Their site is either down or blocking automated logins from "
+                        "this server. If the link works in a normal browser, try "
+                        "running the bot from your own computer or set PROXY_HOST/PROXY_PORT."
+                    )
 
                 # Confirmed selectors for accounts.studentbeans.com
                 await page.wait_for_selector('#email', timeout=10000)
