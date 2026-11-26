@@ -1,5 +1,9 @@
+from datetime import datetime
+
 import discord
 from discord.ext import commands
+
+import icloud
 from config import DISCORD_TOKEN
 from storage import CredentialStore
 from providers import get_provider, list_providers
@@ -25,7 +29,9 @@ async def on_ready():
 
 @bot.event
 async def on_command_error(ctx, error):
-    if isinstance(error, commands.CheckFailure):
+    if isinstance(error, commands.NotOwner):
+        await ctx.author.send("⛔ Only the bot's owner can use that command.")
+    elif isinstance(error, commands.CheckFailure):
         await ctx.author.send("⚠️ Please use bot commands in a direct message for security.")
         try:
             await ctx.message.delete()
@@ -85,6 +91,51 @@ async def get_codes(ctx, headed: str = None):
         await ctx.author.send(f"**{provider.name.title()} codes:**\n{codes}")
 
 
+@bot.command(name="hme")
+@is_dm()
+@commands.is_owner()
+async def hide_my_email(ctx, *, label: str = None):
+    """Create a new iCloud+ Hide My Email address. Usage: !hme [label]"""
+    label = (label or f"Discord bot {datetime.now():%Y-%m-%d %H:%M}").strip()[:100]
+    await ctx.author.send("🔄 Creating a Hide My Email address...")
+    try:
+        email = await icloud.create_hide_my_email(label)
+    except icloud.ICloudError as e:
+        await ctx.author.send(f"❌ {e}")
+        return
+    except Exception as e:
+        print(f"Hide My Email error: {e!r}")
+        await ctx.author.send(f"❌ Something went wrong creating the address: {e}")
+        return
+    await ctx.author.send(f"✅ New Hide My Email (label: **{label}**):\n`{email}`")
+
+
+@bot.command(name="icloudlogin")
+@is_dm()
+@commands.is_owner()
+async def icloud_login(ctx):
+    """Save an iCloud session. Attach icloud_session.json from icloud_login.py."""
+    if not ctx.message.attachments:
+        await ctx.author.send(
+            "📎 Attach the `icloud_session.json` file made by `python icloud_login.py` "
+            "to the same message as `!icloudlogin`."
+        )
+        return
+    attachment = ctx.message.attachments[0]
+    if attachment.size > 1_000_000:
+        await ctx.author.send("❌ That file is too big to be a session file.")
+        return
+    try:
+        icloud.save_session(await attachment.read())
+    except icloud.ICloudError as e:
+        await ctx.author.send(f"❌ {e}")
+        return
+    await ctx.author.send(
+        "✅ iCloud sign-in saved. Try `!hme` now.\n"
+        "Delete your message with the file (and the file on your Mac) — it gives access to your iCloud account."
+    )
+
+
 @bot.command(name="remove")
 @is_dm()
 async def remove_credential(ctx, service: str):
@@ -123,6 +174,16 @@ async def help_cmd(ctx):
         name="!remove <service>", value="Remove saved credentials", inline=False
     )
     embed.add_field(name="!list", value="List supported services", inline=False)
+    embed.add_field(
+        name="!hme [label]",
+        value="Create a new iCloud+ Hide My Email address (owner only)",
+        inline=False,
+    )
+    embed.add_field(
+        name="!icloudlogin + file",
+        value="Save the iCloud sign-in from icloud_login.py (owner only)",
+        inline=False,
+    )
     await ctx.author.send(embed=embed)
 
 

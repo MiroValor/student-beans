@@ -6,3 +6,5 @@ __pycache__/
 .env.local
 *.log
 debug.png
+icloud_session.json
+icloud_session.tmp

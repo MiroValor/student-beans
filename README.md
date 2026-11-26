@@ -55,6 +55,22 @@ with a permanent `ENCRYPTION_KEY` on first run, then starts the bot. It is safe
 to run on every boot. Set `DISCORD_TOKEN` in the environment before running it.
 The browser always runs headless on a server, so `!codes headed` has no effect there.
 
+## iCloud+ Hide My Email (`!hme`)
+
+`!hme [label]` creates a new Hide My Email address on your Apple account and
+DMs it to you. Only the bot's owner (the Discord account that owns the bot
+application) can use it.
+
+1. On your Mac, sign in once: `.venv/bin/python icloud_login.py`. Sign in in the
+   Chrome window that opens (tick "Keep me signed in"), wait for iCloud+ to load,
+   then press Enter in the terminal. This writes `icloud_session.json`.
+2. If the bot runs on a server, DM it `!icloudlogin` with that file attached,
+   then delete the file and your message.
+3. DM `!hme` (or `!hme Netflix` to set a label).
+
+When Apple ends the session, `!hme` says so; repeat steps 1–2. Apple limits how
+many addresses you can create per hour.
+
 ## Commands (DM only)
 
 | Command | What it does |
@@ -64,6 +80,8 @@ The browser always runs headless on a server, so `!codes headed` has no effect t
 | `!codes` | Fetch codes from all saved accounts |
 | `!remove <service>` | Delete a saved account |
 | `!list` | List supported services |
+| `!hme [label]` | Create an iCloud+ Hide My Email address (owner only) |
+| `!icloudlogin` + file | Save the iCloud sign-in from `icloud_login.py` (owner only) |
 | `!help` | Show this help |
 
 ## ⚠️ Important limitations
